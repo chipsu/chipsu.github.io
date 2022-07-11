@@ -1,0 +1,117 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello</title>
+    <style>
+        body,
+        html {
+            padding: 0;
+            margin: 0;
+            color: #fff;
+            background-color: #000;
+            font-family: monospace;
+        }
+        
+        #canvas {
+            width: 100vw;
+            height: 100vh;
+            object-fit: contain;
+            background-color: #000;
+            image-rendering: pixelated;
+        }
+        
+        a {
+            color: #fff;
+        }
+        
+        #footer {
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            line-height: 40px;
+            text-align: center;
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', event => {
+            const canvas = document.getElementById('canvas')
+            const ctx = canvas.getContext('2d')
+            const text = 'larsson.gg'
+            ctx.font = '48px monospace'
+            ctx.fillStyle = 'white'
+            ctx.textBaseline = 'middle'
+            ctx.textAlign = 'center'
+            ctx.fillText(text, canvas.width / 2, canvas.height / 2)
+            for (let y = 0; y < canvas.height; y += 2) {
+                ctx.fillRect(0, y, canvas.width, 1)
+            }
+            const bytes = 4
+            const channel = 3
+            const stride = canvas.width * bytes
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            var prevData = imageData.data.slice()
+            for (let i = 0; i < prevData.length; i += 4) {
+                for (let j = 0; j < 4; ++j) {
+                    prevData[i + j] = j == channel ? (prevData[i + j] ? 255 : 0) : [187, 148, 230, 255][j]
+                }
+            }
+            ctx.putImageData(new ImageData(prevData, imageData.width), 0, 0)
+
+            let then = 0
+            const interval = 1000 / 30
+            const update = now => {
+                const elapsed = now - then
+                if (elapsed > interval) {
+                    const newData = prevData.slice()
+                    for (let x = 0; x < canvas.width; ++x) {
+                        for (let y = 0; y < canvas.height; ++y) {
+                            const index = y * stride + x * bytes + channel
+                            const prevVal = prevData[index]
+                            let c = 0
+                            for (let ox = -1; ox < 2 && c < 4; ++ox) {
+                                for (let oy = -1; oy < 2 && c < 4; ++oy) {
+                                    if ((ox || oy) && prevData[((y + oy) % canvas.height) * stride + ((x + ox) % canvas.width) * bytes + channel] == 255) {
+                                        c++
+                                    }
+                                }
+                            }
+                            if (prevVal == 255 && (c == 2 || c == 3)) {
+                                newData[index] = 255
+                            } else if (prevVal != 255 && c == 3) {
+                                newData[index] = 255
+                            } else {
+                                newData[index] = Math.max(0, prevVal - 128)
+                            }
+                        }
+                    }
+                    ctx.putImageData(new ImageData(newData, imageData.width), 0, 0)
+                    prevData = newData
+                    then = now
+                }
+                requestAnimationFrame(update)
+            }
+
+            let init = false
+            canvas.addEventListener('click', event => {
+                if (init) return
+                init = true
+                then = performance.now()
+                requestAnimationFrame(update)
+            })
+        })
+    </script>
+</head>
+
+<body>
+    <canvas id="canvas" width="320" height="240"></canvas>
+    <div id="footer">
+        <a href="mailto:hi@larsson.gg">hi@larsson.gg</a>
+    </div>
+</body>
+
+</html>
