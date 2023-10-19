@@ -47,17 +47,19 @@
             ctx.textBaseline = 'middle'
             ctx.textAlign = 'center'
             ctx.fillText(text, canvas.width / 2, canvas.height / 2)
-            for (let y = 0; y < canvas.height; y += 2) {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+            var prevData = imageData.data.slice()
+            for (let y = 0; y < canvas.height; y += 1) {
                 ctx.fillRect(0, y, canvas.width, 1)
             }
             const bytes = 4
             const channel = 3
             const stride = canvas.width * bytes
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-            var prevData = imageData.data.slice()
+            let n = 0
             for (let i = 0; i < prevData.length; i += 4) {
                 for (let j = 0; j < 4; ++j) {
-                    prevData[i + j] = j == channel ? (prevData[i + j] ? 255 : 0) : [187, 148, 230, 255][j]
+                    prevData[i + j] = j == channel ? (prevData[i + j] ? 255 : 0) : (n + j * 32) % 255
+                    n++
                 }
             }
             ctx.putImageData(new ImageData(prevData, imageData.width), 0, 0)
